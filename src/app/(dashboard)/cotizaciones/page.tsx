@@ -26,7 +26,7 @@ export default function CotizacionesPage() {
       }
       const { data, error } = await query
       if (error) throw error
-      const formatted = data?.map(c => ({ ...c, cliente_nombre: c.cliente?.nombre, cliente_razon_social: c.cliente?.razon_social, creado_por_nombre: c.creador?.nombre })) || []
+      const formatted = data?.map((c: any) => ({ ...c, cliente_nombre: c.cliente?.nombre, cliente_razon_social: c.cliente?.razon_social, creado_por_nombre: c.creador?.nombre })) || []
       setCotizaciones(formatted)
     } catch (e) { toast.error('Error al cargar cotizaciones') }
     finally { setLoading(false) }
