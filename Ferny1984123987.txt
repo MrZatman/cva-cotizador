@@ -1,0 +1,13 @@
+Ferny1984123987
+
+supabase
+
+https://cvasbciowrnxqlxlsaok.supabase.co
+
+NEXT_PUBLIC_SUPABASE_URL = https://cvasbciowrnxqlxlsaok.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY = Ju5PCptGoRjT3nuXJS4maA_vOV0pYSW
+SUPABASE_SERVICE_ROLE_KEY = ULaDK2dJAjUuqL7mlbhlBQ_dAeJSBG9
+
+sb_publishable_Ju5PCptGoRjT3nuXJS4maA_vOV0pYSW
+
+sb_secret_ULaDK2dJAjUuqL7mlbhlBQ_dAeJSBG9
