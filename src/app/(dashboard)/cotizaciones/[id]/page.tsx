@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Button, Input, Select, TextArea, Card, Loading } from '@/components/ui'
 import { ArrowLeft, Plus, Trash2, Save, Edit, X, Download } from 'lucide-react'
 import { formatCurrency, formatDate, getStatusColor, getStatusLabel } from '@/lib/utils/formatters'
+import { generateCotizacionPDF } from '@/lib/utils/generatePDF'
 import type { Cotizacion, Cliente, CotizacionPartida } from '@/types'
 import toast from 'react-hot-toast'
 
@@ -63,7 +64,9 @@ export default function CotizacionDetallePage() {
   }
 
   const handleDownloadPDF = () => {
-    window.open(`/api/cotizaciones/${cotizacionId}/pdf`, '_blank')
+    if (!cotizacion) return
+    const cliente = (cotizacion as any).cliente || {}
+    generateCotizacionPDF({ cotizacion, cliente, partidas })
   }
 
   if (loading) return <Loading text="Cargando..." />
