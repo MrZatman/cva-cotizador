@@ -31,3 +31,15 @@ export interface PartidaImagen { id: string; partida_id: string; imagen_url: str
 export interface ClienteFormData { nombre: string; razon_social?: string; rfc?: string; domicilio_fiscal?: string; email?: string; telefono?: string; regimen_fiscal?: string; }
 export interface CotizacionFormData { titulo: string; cliente_id: string; folder_id?: string; realizado_por?: string; fecha_vigencia?: string; alcance_trabajo?: string; exclusiones?: string; observaciones?: string; condiciones_pago?: string; capacitacion?: string; }
 export interface PartidaFormData { numero_partida: number; modelo?: string; descripcion?: string; precio_unitario: number; cantidad: number; }
+
+export interface Producto {
+  id: string
+  codigo: string | null
+  nombre: string
+  descripcion: string | null
+  precio: number
+  categoria: string | null
+  activo: boolean
+  created_at: string
+  updated_at: string
+}

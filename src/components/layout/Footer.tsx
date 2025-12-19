@@ -17,7 +17,10 @@ export default function Footer() {
             <Link href="/cotizaciones" className="text-sm text-cva-gray-600 hover:text-cva-green">Cotizaciones</Link>
             <Link href="/clientes" className="text-sm text-cva-gray-600 hover:text-cva-green">Clientes</Link>
             {isAdmin && (
-              <Link href="/usuarios" className="text-sm text-cva-gray-600 hover:text-cva-green">Usuarios</Link>
+              <>
+                <Link href="/productos" className="text-sm text-cva-gray-600 hover:text-cva-green">Productos</Link>
+                <Link href="/usuarios" className="text-sm text-cva-gray-600 hover:text-cva-green">Usuarios</Link>
+              </>
             )}
           </nav>
         </div>
