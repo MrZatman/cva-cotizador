@@ -1,10 +1,12 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
 html { scroll-behavior: smooth; }
 body { font-family: 'Inter', system-ui, sans-serif; }
-.font-display { font-family: 'Playfair Display', serif; }
+.font-display { font-family: 'Poppins', sans-serif; font-style: italic; }
+
 *:focus-visible { outline: 2px solid #2D5A3D; outline-offset: 2px; }
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
