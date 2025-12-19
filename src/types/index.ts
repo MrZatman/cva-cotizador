@@ -43,3 +43,11 @@ export interface Producto {
   created_at: string
   updated_at: string
 }
+
+export interface Categoria {
+  id: string
+  nombre: string
+  orden: number
+  activo: boolean
+  created_at: string
+}

@@ -3,41 +3,39 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button, Input, Select, Modal, Loading, Card } from '@/components/ui'
-import { Plus, Search, Package, Edit, Trash2, Check, X } from 'lucide-react'
+import { Plus, Search, Package, Edit, Trash2, Check, X, Tag, Settings } from 'lucide-react'
 import { useAdmin } from '@/lib/hooks/useAdmin'
 import { formatCurrency } from '@/lib/utils/formatters'
-import type { Producto } from '@/types'
+import type { Producto, Categoria } from '@/types'
 import toast from 'react-hot-toast'
 
-const CATEGORIAS = [
-  { value: '', label: 'Todas las categorías' },
-  { value: 'Cámaras', label: 'Cámaras' },
-  { value: 'DVR/NVR', label: 'DVR / NVR' },
-  { value: 'Accesorios', label: 'Accesorios' },
-  { value: 'Cableado', label: 'Cableado' },
-  { value: 'Instalación', label: 'Instalación' },
-  { value: 'Servicios', label: 'Servicios' },
-  { value: 'Soporte', label: 'Soporte' },
-  { value: 'Otros', label: 'Otros' },
-]
-
 const emptyForm = { codigo: '', nombre: '', descripcion: '', precio: 0, categoria: '', activo: true }
+const emptyCategoriaForm = { nombre: '' }
 
 export default function ProductosPage() {
   const router = useRouter()
   const { isAdmin, loading: adminLoading } = useAdmin()
   const [productos, setProductos] = useState<Producto[]>([])
+  const [categorias, setCategorias] = useState<Categoria[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [categoriaFiltro, setCategoriaFiltro] = useState('')
+  
+  // Modal Producto
   const [modalOpen, setModalOpen] = useState(false)
   const [editingProducto, setEditingProducto] = useState<Producto | null>(null)
   const [formData, setFormData] = useState(emptyForm)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
+  
+  // Modal Categorías
+  const [categoriasModalOpen, setCategoriasModalOpen] = useState(false)
+  const [categoriaForm, setCategoriaForm] = useState(emptyCategoriaForm)
+  const [editingCategoria, setEditingCategoria] = useState<Categoria | null>(null)
+  const [savingCategoria, setSavingCategoria] = useState(false)
+  
   const supabase = createClient()
 
-  // Protección: redirigir si no es admin
   useEffect(() => {
     if (!adminLoading && !isAdmin) {
       toast.error('No tienes permisos para ver esta página')
@@ -46,7 +44,10 @@ export default function ProductosPage() {
   }, [isAdmin, adminLoading, router])
 
   useEffect(() => {
-    if (isAdmin) fetchProductos()
+    if (isAdmin) {
+      fetchProductos()
+      fetchCategorias()
+    }
   }, [isAdmin])
 
   const fetchProductos = async () => {
@@ -55,7 +56,6 @@ export default function ProductosPage() {
       const { data, error } = await supabase
         .from('productos')
         .select('*')
-        .order('categoria')
         .order('nombre')
       if (error) throw error
       setProductos(data || [])
@@ -66,6 +66,22 @@ export default function ProductosPage() {
     }
   }
 
+  const fetchCategorias = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('categorias')
+        .select('*')
+        .eq('activo', true)
+        .order('orden')
+        .order('nombre')
+      if (error) throw error
+      setCategorias(data || [])
+    } catch (e) {
+      toast.error('Error al cargar categorías')
+    }
+  }
+
+  // ========== PRODUCTOS ==========
   const handleOpenModal = (producto?: Producto) => {
     if (producto) {
       setEditingProducto(producto)
@@ -170,6 +186,79 @@ export default function ProductosPage() {
     }
   }
 
+  // ========== CATEGORÍAS ==========
+  const handleAddCategoria = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!categoriaForm.nombre.trim()) {
+      toast.error('El nombre es requerido')
+      return
+    }
+    
+    setSavingCategoria(true)
+    try {
+      if (editingCategoria) {
+        const { error } = await supabase
+          .from('categorias')
+          .update({ nombre: categoriaForm.nombre.trim() })
+          .eq('id', editingCategoria.id)
+        if (error) throw error
+        toast.success('Categoría actualizada')
+      } else {
+        const { error } = await supabase
+          .from('categorias')
+          .insert({ nombre: categoriaForm.nombre.trim() })
+        if (error) {
+          if (error.code === '23505') {
+            toast.error('Esta categoría ya existe')
+            return
+          }
+          throw error
+        }
+        toast.success('Categoría creada')
+      }
+      setCategoriaForm(emptyCategoriaForm)
+      setEditingCategoria(null)
+      fetchCategorias()
+    } catch (e: any) {
+      toast.error(e.message || 'Error al guardar')
+    } finally {
+      setSavingCategoria(false)
+    }
+  }
+
+  const handleEditCategoria = (cat: Categoria) => {
+    setEditingCategoria(cat)
+    setCategoriaForm({ nombre: cat.nombre })
+  }
+
+  const handleCancelEditCategoria = () => {
+    setEditingCategoria(null)
+    setCategoriaForm(emptyCategoriaForm)
+  }
+
+  const handleDeleteCategoria = async (id: string, nombre: string) => {
+    if (nombre === 'Sin categoría' || nombre === 'Otros') {
+      toast.error('No puedes eliminar las categorías por defecto')
+      return
+    }
+    if (!confirm('¿Eliminar esta categoría?')) return
+    
+    try {
+      // Primero actualizar productos que usen esta categoría
+      await supabase
+        .from('productos')
+        .update({ categoria: null })
+        .eq('categoria', nombre)
+      
+      const { error } = await supabase.from('categorias').delete().eq('id', id)
+      if (error) throw error
+      toast.success('Categoría eliminada')
+      fetchCategorias()
+    } catch (e) {
+      toast.error('Error al eliminar')
+    }
+  }
+
   const filtered = productos.filter((p) => {
     const matchSearch =
       p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -178,6 +267,16 @@ export default function ProductosPage() {
     const matchCategoria = !categoriaFiltro || p.categoria === categoriaFiltro
     return matchSearch && matchCategoria
   })
+
+  const categoriasOptions = [
+    { value: '', label: 'Todas las categorías' },
+    ...categorias.map((c) => ({ value: c.nombre, label: c.nombre })),
+  ]
+
+  const categoriasFormOptions = [
+    { value: '', label: 'Sin categoría' },
+    ...categorias.filter((c) => c.nombre !== 'Sin categoría').map((c) => ({ value: c.nombre, label: c.nombre })),
+  ]
 
   if (adminLoading || !isAdmin) return <Loading text="Verificando permisos..." />
   if (loading) return <Loading text="Cargando productos..." />
@@ -190,16 +289,22 @@ export default function ProductosPage() {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <Button variant="outline" onClick={() => handleOpenModal()} className="flex items-center gap-2">
-          <Plus className="w-4 h-4" />
-          Agregar Producto
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => handleOpenModal()} className="flex items-center gap-2">
+            <Plus className="w-4 h-4" />
+            Agregar Producto
+          </Button>
+          <Button variant="ghost" onClick={() => setCategoriasModalOpen(true)} className="flex items-center gap-2">
+            <Settings className="w-4 h-4" />
+            Categorías
+          </Button>
+        </div>
         <div className="flex-1 flex flex-col sm:flex-row gap-4 sm:justify-end">
           <div className="w-full sm:w-48">
             <Select
               value={categoriaFiltro}
               onChange={(e) => setCategoriaFiltro(e.target.value)}
-              options={CATEGORIAS}
+              options={categoriasOptions}
             />
           </div>
           <div className="w-full sm:w-64 relative">
@@ -284,7 +389,7 @@ export default function ProductosPage() {
         </div>
       )}
 
-      {/* Modal Crear/Editar */}
+      {/* Modal Crear/Editar Producto */}
       <Modal
         isOpen={modalOpen}
         onClose={handleCloseModal}
@@ -322,7 +427,7 @@ export default function ProductosPage() {
               label="Categoría"
               value={formData.categoria}
               onChange={(e) => setFormData((prev) => ({ ...prev, categoria: e.target.value }))}
-              options={[{ value: '', label: 'Sin categoría' }, ...CATEGORIAS.slice(1)]}
+              options={categoriasFormOptions}
             />
           </div>
           <div>
@@ -359,6 +464,78 @@ export default function ProductosPage() {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Modal Gestión de Categorías */}
+      <Modal
+        isOpen={categoriasModalOpen}
+        onClose={() => {
+          setCategoriasModalOpen(false)
+          setEditingCategoria(null)
+          setCategoriaForm(emptyCategoriaForm)
+        }}
+        title="Gestionar Categorías"
+      >
+        <div className="space-y-4">
+          {/* Formulario agregar/editar categoría */}
+          <form onSubmit={handleAddCategoria} className="flex gap-2">
+            <Input
+              value={categoriaForm.nombre}
+              onChange={(e) => setCategoriaForm({ nombre: e.target.value })}
+              placeholder="Nueva categoría..."
+              className="flex-1"
+            />
+            <Button type="submit" loading={savingCategoria}>
+              {editingCategoria ? 'Guardar' : 'Agregar'}
+            </Button>
+            {editingCategoria && (
+              <Button type="button" variant="ghost" onClick={handleCancelEditCategoria}>
+                Cancelar
+              </Button>
+            )}
+          </form>
+
+          {/* Lista de categorías */}
+          <div className="border rounded-lg divide-y max-h-64 overflow-y-auto">
+            {categorias.length === 0 ? (
+              <div className="p-4 text-center text-cva-gray-500">
+                No hay categorías
+              </div>
+            ) : (
+              categorias.map((cat) => (
+                <div key={cat.id} className="flex items-center justify-between p-3 hover:bg-cva-gray-50">
+                  <div className="flex items-center gap-2">
+                    <Tag className="w-4 h-4 text-cva-gray-400" />
+                    <span>{cat.nombre}</span>
+                  </div>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEditCategoria(cat)}
+                      disabled={cat.nombre === 'Sin categoría' || cat.nombre === 'Otros'}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteCategoria(cat.id, cat.nombre)}
+                      className="text-red-600"
+                      disabled={cat.nombre === 'Sin categoría' || cat.nombre === 'Otros'}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          <p className="text-xs text-cva-gray-500">
+            Las categorías "Sin categoría" y "Otros" no se pueden eliminar.
+          </p>
+        </div>
       </Modal>
     </div>
   )
