@@ -7,7 +7,8 @@ import { Button, Input, Select, TextArea, Card, Loading } from '@/components/ui'
 import { ArrowLeft, Plus, Trash2, Save, Edit, X, Download } from 'lucide-react'
 import { formatCurrency, formatDate, getStatusColor, getStatusLabel } from '@/lib/utils/formatters'
 import { generateCotizacionPDF } from '@/lib/utils/generatePDF'
-import type { Cotizacion, Cliente, CotizacionPartida } from '@/types'
+import ProductoCombobox from '@/components/cotizaciones/ProductoCombobox'
+import type { Cotizacion, Cliente, CotizacionPartida, Producto } from '@/types'
 import toast from 'react-hot-toast'
 
 export default function CotizacionDetallePage() {
@@ -41,8 +42,39 @@ export default function CotizacionDetallePage() {
   }
 
   const handleInputChange = (field: string, value: string) => { if (!cotizacion) return; setCotizacion({ ...cotizacion, [field]: value }) }
-  const updatePartida = (id: string, field: string, value: string | number) => { setPartidas(partidas.map(p => p.id === id ? { ...p, [field]: value } : p)) }
-  const addPartida = () => { setPartidas([...partidas, { id: crypto.randomUUID(), cotizacion_id: cotizacionId, numero_partida: partidas.length + 1, modelo: '', descripcion: '', precio_unitario: 0, cantidad: 1, subtotal: 0, orden: partidas.length, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }]) }
+  
+  const updatePartida = (id: string, field: string, value: string | number) => { 
+    setPartidas(partidas.map(p => p.id === id ? { ...p, [field]: value } : p)) 
+  }
+  
+  const handleSelectProducto = (partidaId: string, producto: Producto | null) => {
+    if (producto) {
+      // Auto-llenar campos con datos del producto
+      setPartidas(partidas.map(p => p.id === partidaId ? {
+        ...p,
+        modelo: producto.nombre,
+        descripcion: producto.descripcion || '',
+        precio_unitario: producto.precio,
+      } : p))
+    }
+  }
+  
+  const addPartida = () => { 
+    setPartidas([...partidas, { 
+      id: crypto.randomUUID(), 
+      cotizacion_id: cotizacionId, 
+      numero_partida: partidas.length + 1, 
+      modelo: '', 
+      descripcion: '', 
+      precio_unitario: 0, 
+      cantidad: 1, 
+      subtotal: 0, 
+      orden: partidas.length, 
+      created_at: new Date().toISOString(), 
+      updated_at: new Date().toISOString() 
+    }]) 
+  }
+  
   const removePartida = (id: string) => { setPartidas(partidas.filter(p => p.id !== id)) }
 
   const subtotal = partidas.reduce((sum, p) => sum + (p.precio_unitario * p.cantidad), 0)
@@ -129,34 +161,100 @@ export default function CotizacionDetallePage() {
           <h2 className="text-lg font-semibold">Partidas</h2>
           {editing && <Button variant="outline" size="sm" onClick={addPartida}><Plus className="w-4 h-4 mr-1" />Agregar</Button>}
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-cva-gray-100">
-              <tr>
-                <th className="px-4 py-3 text-left text-sm">#</th>
-                <th className="px-4 py-3 text-left text-sm">Concepto</th>
-                <th className="px-4 py-3 text-left text-sm">Descripción</th>
-                <th className="px-4 py-3 text-right text-sm">P.U.</th>
-                <th className="px-4 py-3 text-right text-sm">Cant.</th>
-                <th className="px-4 py-3 text-right text-sm">Subtotal</th>
-                {editing && <th></th>}
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {partidas.map((p, i) => (
-                <tr key={p.id}>
-                  <td className="px-4 py-3 text-sm">{i + 1}</td>
-                  <td className="px-4 py-3">{editing ? <Input value={p.modelo || ''} onChange={(e) => updatePartida(p.id, 'modelo', e.target.value)} className="text-sm" placeholder="Concepto" /> : <span className="text-sm">{p.modelo || '-'}</span>}</td>
-                  <td className="px-4 py-3">{editing ? <Input value={p.descripcion || ''} onChange={(e) => updatePartida(p.id, 'descripcion', e.target.value)} className="text-sm" placeholder="Descripción" /> : <span className="text-sm">{p.descripcion || '-'}</span>}</td>
-                  <td className="px-4 py-3 text-right">{editing ? <Input type="number" value={p.precio_unitario} onChange={(e) => updatePartida(p.id, 'precio_unitario', parseFloat(e.target.value) || 0)} className="text-sm text-right w-28" /> : <span className="text-sm">{formatCurrency(p.precio_unitario)}</span>}</td>
-                  <td className="px-4 py-3 text-right">{editing ? <Input type="number" value={p.cantidad} onChange={(e) => updatePartida(p.id, 'cantidad', parseInt(e.target.value) || 1)} className="text-sm text-right w-20" /> : <span className="text-sm">{p.cantidad}</span>}</td>
-                  <td className="px-4 py-3 text-right font-medium">{formatCurrency(p.precio_unitario * p.cantidad)}</td>
-                  {editing && <td className="px-4 py-3"><Button variant="ghost" size="sm" onClick={() => removePartida(p.id)} className="text-red-500"><Trash2 className="w-4 h-4" /></Button></td>}
+        
+        {editing ? (
+          // Vista de edición con cards
+          <div className="space-y-4">
+            {partidas.map((p, i) => (
+              <div key={p.id} className="border border-cva-gray-200 rounded-lg p-4 bg-cva-gray-50">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-medium text-cva-gray-500">Partida #{i + 1}</span>
+                  <Button variant="ghost" size="sm" onClick={() => removePartida(p.id)} className="text-red-500">
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-cva-gray-700 mb-1">Concepto</label>
+                    <ProductoCombobox
+                      value={p.modelo || ''}
+                      onChange={(value) => updatePartida(p.id, 'modelo', value)}
+                      onSelectProducto={(producto) => handleSelectProducto(p.id, producto)}
+                      placeholder="Buscar producto o escribir concepto..."
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-cva-gray-700 mb-1">Descripción</label>
+                    <textarea
+                      value={p.descripcion || ''}
+                      onChange={(e) => updatePartida(p.id, 'descripcion', e.target.value)}
+                      placeholder="Descripción del producto o servicio..."
+                      rows={2}
+                      className="w-full px-4 py-2.5 border border-cva-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cva-green resize-none text-sm"
+                    />
+                  </div>
+                  <div>
+                    <Input 
+                      label="Precio Unitario" 
+                      type="number" 
+                      step="0.01"
+                      min="0"
+                      value={p.precio_unitario} 
+                      onChange={(e) => updatePartida(p.id, 'precio_unitario', parseFloat(e.target.value) || 0)} 
+                    />
+                  </div>
+                  <div>
+                    <Input 
+                      label="Cantidad" 
+                      type="number" 
+                      min="1"
+                      value={p.cantidad} 
+                      onChange={(e) => updatePartida(p.id, 'cantidad', parseInt(e.target.value) || 1)} 
+                    />
+                  </div>
+                </div>
+                <div className="mt-3 pt-3 border-t border-cva-gray-200 flex justify-end">
+                  <span className="text-sm text-cva-gray-500">Subtotal: </span>
+                  <span className="text-sm font-semibold text-cva-green ml-2">{formatCurrency(p.precio_unitario * p.cantidad)}</span>
+                </div>
+              </div>
+            ))}
+            {partidas.length === 0 && (
+              <div className="text-center py-8 text-cva-gray-500">
+                No hay partidas. Haz clic en "Agregar" para añadir una.
+              </div>
+            )}
+          </div>
+        ) : (
+          // Vista de solo lectura con tabla
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-cva-gray-100">
+                <tr>
+                  <th className="px-4 py-3 text-left text-sm">#</th>
+                  <th className="px-4 py-3 text-left text-sm">Concepto</th>
+                  <th className="px-4 py-3 text-left text-sm">Descripción</th>
+                  <th className="px-4 py-3 text-right text-sm">P.U.</th>
+                  <th className="px-4 py-3 text-right text-sm">Cant.</th>
+                  <th className="px-4 py-3 text-right text-sm">Subtotal</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y">
+                {partidas.map((p, i) => (
+                  <tr key={p.id}>
+                    <td className="px-4 py-3 text-sm">{i + 1}</td>
+                    <td className="px-4 py-3 text-sm">{p.modelo || '-'}</td>
+                    <td className="px-4 py-3 text-sm">{p.descripcion || '-'}</td>
+                    <td className="px-4 py-3 text-right text-sm">{formatCurrency(p.precio_unitario)}</td>
+                    <td className="px-4 py-3 text-right text-sm">{p.cantidad}</td>
+                    <td className="px-4 py-3 text-right font-medium">{formatCurrency(p.precio_unitario * p.cantidad)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        
         <div className="mt-4 pt-4 border-t flex justify-end">
           <div className="w-64 space-y-2">
             <div className="flex justify-between"><span>Subtotal:</span><span className="font-medium">{formatCurrency(subtotal)}</span></div>
