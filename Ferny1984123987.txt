@@ -13,3 +13,6 @@ sb_publishable_Ju5PCptGoRjT3nuXJS4maA_vOV0pYSW
 sb_secret_ULaDK2dJAjUuqL7mlbhlBQ_dAeJSBG9
 
 git remote add origin https://github.com/MrZatman/cva-cotizador.git
+
+
+stripe: whsec_9e6896760ee1aa0a5b2737f569049b58b59bd1875360f878a4461906e55e2dbe

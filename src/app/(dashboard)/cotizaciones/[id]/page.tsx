@@ -127,14 +127,14 @@ export default function CotizacionDetallePage() {
       <Card className="mb-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">Partidas</h2>
-          {editing && <Button variant="secondary" size="sm" onClick={addPartida}><Plus className="w-4 h-4 mr-1" />Agregar</Button>}
+          {editing && <Button variant="outline" size="sm" onClick={addPartida}><Plus className="w-4 h-4 mr-1" />Agregar</Button>}
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-cva-gray-100">
               <tr>
                 <th className="px-4 py-3 text-left text-sm">#</th>
-                <th className="px-4 py-3 text-left text-sm">Modelo</th>
+                <th className="px-4 py-3 text-left text-sm">Concepto</th>
                 <th className="px-4 py-3 text-left text-sm">Descripción</th>
                 <th className="px-4 py-3 text-right text-sm">P.U.</th>
                 <th className="px-4 py-3 text-right text-sm">Cant.</th>
@@ -146,8 +146,8 @@ export default function CotizacionDetallePage() {
               {partidas.map((p, i) => (
                 <tr key={p.id}>
                   <td className="px-4 py-3 text-sm">{i + 1}</td>
-                  <td className="px-4 py-3">{editing ? <Input value={p.modelo || ''} onChange={(e) => updatePartida(p.id, 'modelo', e.target.value)} className="text-sm" /> : <span className="text-sm">{p.modelo || '-'}</span>}</td>
-                  <td className="px-4 py-3">{editing ? <Input value={p.descripcion || ''} onChange={(e) => updatePartida(p.id, 'descripcion', e.target.value)} className="text-sm" /> : <span className="text-sm">{p.descripcion || '-'}</span>}</td>
+                  <td className="px-4 py-3">{editing ? <Input value={p.modelo || ''} onChange={(e) => updatePartida(p.id, 'modelo', e.target.value)} className="text-sm" placeholder="Concepto" /> : <span className="text-sm">{p.modelo || '-'}</span>}</td>
+                  <td className="px-4 py-3">{editing ? <Input value={p.descripcion || ''} onChange={(e) => updatePartida(p.id, 'descripcion', e.target.value)} className="text-sm" placeholder="Descripción" /> : <span className="text-sm">{p.descripcion || '-'}</span>}</td>
                   <td className="px-4 py-3 text-right">{editing ? <Input type="number" value={p.precio_unitario} onChange={(e) => updatePartida(p.id, 'precio_unitario', parseFloat(e.target.value) || 0)} className="text-sm text-right w-28" /> : <span className="text-sm">{formatCurrency(p.precio_unitario)}</span>}</td>
                   <td className="px-4 py-3 text-right">{editing ? <Input type="number" value={p.cantidad} onChange={(e) => updatePartida(p.id, 'cantidad', parseInt(e.target.value) || 1)} className="text-sm text-right w-20" /> : <span className="text-sm">{p.cantidad}</span>}</td>
                   <td className="px-4 py-3 text-right font-medium">{formatCurrency(p.precio_unitario * p.cantidad)}</td>

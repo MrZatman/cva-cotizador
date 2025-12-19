@@ -9,7 +9,9 @@ import { formatRFC } from '@/lib/utils/formatters'
 import { validateClienteForm } from '@/lib/utils/validators'
 import type { Cliente, ClienteFormData } from '@/types'
 import toast from 'react-hot-toast'
+
 const emptyForm: ClienteFormData = { nombre: '', razon_social: '', rfc: '', domicilio_fiscal: '', email: '', telefono: '', regimen_fiscal: '' }
+
 export default function ClientesPage() {
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [loading, setLoading] = useState(true)
@@ -20,15 +22,21 @@ export default function ClientesPage() {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
   const supabase = createClient()
+
   useEffect(() => { fetchClientes() }, [])
+
   const fetchClientes = async () => { setLoading(true); try { const { data } = await supabase.from('clientes').select('*').order('nombre'); setClientes(data || []) } catch (e) { toast.error('Error al cargar') } finally { setLoading(false) } }
+
   const handleOpenModal = (cliente?: Cliente) => {
     if (cliente) { setEditingCliente(cliente); setFormData({ nombre: cliente.nombre, razon_social: cliente.razon_social || '', rfc: cliente.rfc || '', domicilio_fiscal: cliente.domicilio_fiscal || '', email: cliente.email || '', telefono: cliente.telefono || '', regimen_fiscal: cliente.regimen_fiscal || '' }) }
     else { setEditingCliente(null); setFormData(emptyForm) }
     setErrors({}); setModalOpen(true)
   }
+
   const handleCloseModal = () => { setModalOpen(false); setEditingCliente(null); setFormData(emptyForm); setErrors({}) }
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => { let val = e.target.value; if (e.target.name === 'rfc') val = formatRFC(val); setFormData(prev => ({ ...prev, [e.target.name]: val })); if (errors[e.target.name]) setErrors(prev => ({ ...prev, [e.target.name]: '' })) }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const validation = validateClienteForm(formData); if (!validation.valid) { setErrors(validation.errors); return }
@@ -40,17 +48,26 @@ export default function ClientesPage() {
     } catch (e: any) { toast.error(e.code === '23505' ? 'RFC duplicado' : 'Error al guardar') }
     finally { setSaving(false) }
   }
+
   const handleDelete = async (id: string) => {
     if (!confirm('¿Eliminar cliente?')) return
     try { const { error } = await supabase.from('clientes').delete().eq('id', id); if (error?.code === '23503') { toast.error('Tiene cotizaciones asociadas'); return }; toast.success('Eliminado'); fetchClientes() }
     catch (e) { toast.error('Error al eliminar') }
   }
+
   const filtered = clientes.filter(c => c.nombre.toLowerCase().includes(searchTerm.toLowerCase()) || c.razon_social?.toLowerCase().includes(searchTerm.toLowerCase()) || c.rfc?.toLowerCase().includes(searchTerm.toLowerCase()))
+
   if (loading) return <Loading text="Cargando clientes..." />
+
   return (
     <div>
       <div className="mb-8"><h1 className="font-display text-4xl italic text-cva-green mb-2">Clientes</h1></div>
-      <div className="flex flex-col sm:flex-row gap-4 mb-6"><Button onClick={() => handleOpenModal()} className="flex items-center gap-2"><Plus className="w-4 h-4" />Agregar Cliente</Button><div className="flex-1 flex justify-end"><div className="w-full sm:w-64 relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cva-gray-400" /><input type="text" placeholder="Buscar..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2.5 border border-cva-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cva-green" /></div></div></div>
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <Button variant="outline" onClick={() => handleOpenModal()} className="flex items-center gap-2">
+          <Plus className="w-4 h-4" />Agregar Cliente
+        </Button>
+        <div className="flex-1 flex justify-end"><div className="w-full sm:w-64 relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cva-gray-400" /><input type="text" placeholder="Buscar..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2.5 border border-cva-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cva-green" /></div></div>
+      </div>
       {filtered.length === 0 ? <div className="text-center py-12"><Users className="w-12 h-12 text-cva-gray-300 mx-auto mb-4" /><p className="text-cva-gray-500">{searchTerm ? 'No encontrados' : 'No hay clientes'}</p></div> : (
         <div className="space-y-3">{filtered.map((c) => (
           <AccordionItem key={c.id} title={c.nombre} subtitle={c.razon_social || undefined}>

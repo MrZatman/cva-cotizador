@@ -1,6 +1,10 @@
 'use client'
 import Link from 'next/link'
+import { useAdmin } from '@/lib/hooks/useAdmin'
+
 export default function Footer() {
+  const { isAdmin } = useAdmin()
+
   return (
     <footer className="bg-white border-t border-cva-gray-200 py-4">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -12,7 +16,9 @@ export default function Footer() {
           <nav className="flex items-center gap-6">
             <Link href="/cotizaciones" className="text-sm text-cva-gray-600 hover:text-cva-green">Cotizaciones</Link>
             <Link href="/clientes" className="text-sm text-cva-gray-600 hover:text-cva-green">Clientes</Link>
-            <Link href="/usuarios" className="text-sm text-cva-gray-600 hover:text-cva-green">Usuarios</Link>
+            {isAdmin && (
+              <Link href="/usuarios" className="text-sm text-cva-gray-600 hover:text-cva-green">Usuarios</Link>
+            )}
           </nav>
         </div>
       </div>
